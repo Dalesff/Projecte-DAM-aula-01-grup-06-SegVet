@@ -8,6 +8,7 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.UUID;
 
 /**
  * 
@@ -25,7 +26,7 @@ public class Server {
      * Cada vegada que un usuari inicia sessió, s'afegeix una entrada al mapa amb la clau corresponent al correu electrònic de l'usuari i el valor true.
      * Quan l'usuari tanca la sessió, s'elimina l'entrada corresponent del mapa.
      */
-    private final Map<String, Boolean> activeSessions = new HashMap<>();
+    private final Map<String, String> activeSessions = new HashMap<>();
 
     /**
      * El mètode start() s'encarrega de configurar el servidor i engegar-lo.
@@ -63,33 +64,62 @@ public class Server {
      * @param connection 
      */
     private void handleRequest(Socket socket, Connection connection) {
-        
+   
         try (Scanner scanner = new Scanner(socket.getInputStream());
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                // Si la sol·licitud comença amb un String "login", s'extreuen les credencials d'usuari del missatge i es valida utilitzant el mètode validateCredentials().
+                // Aquí ha d'arrivar un String comport per l'ordre a executar (login/logout), seguit de un email y una contrasenya.
+                // Una peticio de login per exemple sería: login:pepe@segvet.com:123
                 if (line.startsWith("login")) {
+                    //Amb split partirem la cadena separant les credencials, así es podrá treballar amb un string amb l'email y un altre String amb la contrasenya.
+                    // A mes generarém un id per ligarlo a aquesta sessió que guardarem com a valor en el Map activeSessions.
                     String[] parts = line.split(":");
                     String email = parts[1];
                     String password = parts[2];
-                    // Si les credencials són vàlides, s'envia un missatge d'èxit d'inici de sessió al client i s'afegeix una entrada al mapa activeSessions que indica que l'usuari està actiu.
-                    if (validateCredencials(email, password, connection)) {
-                        writer.println("login_success");
-                        System.out.println("User " + email + " logged in");
-                        activeSessions.put(email, true);
-                        while (scanner.hasNextLine()) {
-                            line = scanner.nextLine();
-                            // Quan es rep el missatge de tancament de sessió, s'elimina l'entrada corresponent al mapa activeSessions, s'envia un missatge d'èxit de tancament de sessió al client i es tanca la connexió amb el client.
-                            if (line.equals("logout")) {
-                                activeSessions.remove(email);
-                                writer.println("logout_success");
-                                System.out.println("User " + email + " logged out");
-                                break;
-                            }
-                        }
+                    UUID uuid = UUID.randomUUID();
+                    String id = uuid.toString();
+                    //Aquí evaluarem que no s'intenta fer login amb un email ya actiu.
+                    if (activeSessions.containsKey(email)) {
+                        writer.println("Aquest usuari ja esta dins del sistema");
                     } else {
-                        writer.println("login_error");
+                        // Aquí es comprarán les credencials amb les dades d'usuari que guardem a la base de dades.
+                        if (validateCredencials(email, password, connection)) {
+                            // Si tot es correcte al Map activeSessions introduirem el email com a clau y l'id generada com a valor.
+                            activeSessions.put(email, id);
+                            // Retornarem als clients el missatge "login_success" junt amb la id de la sessió per que el client pugui fer operacións amb ell mes endevant.
+                            writer.println("login_success" + ":" + id);
+                            System.out.println("User " + email + " logged in");
+                            while (scanner.hasNextLine()) {
+                                line = scanner.nextLine();
+                                // TODO: Pendent, petició menú usuaris.
+                                if (false) {
+                                
+                                }
+                                // TODO: Pendent, petició menú mascota.
+                                if (false) {
+                                
+                                }
+                                // TODO: Pendent, petició menú historial médic.
+                                if (false) {
+                                
+                                }
+                                // TODO: Pendent, petició menú cites.
+                                if (false) {
+                                
+                                }
+                                // Quan Arriba una petició de logout, ha d'arrivar juntament amb l'id de la sessió, aixi podrá treure del Map activeSessions les credencials de la sessió activa.
+                                if (line.equals("logout" + ":" + id)) {
+                                    String[] partsOut = line.split(":");
+                                    activeSessions.remove(email,partsOut[1]);
+                                    writer.println("logout_success");
+                                    System.out.println("User " + email + " logged out");
+                                    break;
+                                }
+                            }
+                        } else {
+                            writer.println("login_error");
+                        }
                     }
                 } else {
                     writer.println("unknown_command");
@@ -128,7 +158,7 @@ public class Server {
      * Mètode per accedir al map de les sessions activas.
      * @return 
      */
-    public Map<String, Boolean> getActiveSessions() {
+    public Map<String, String> getActiveSessions() {
         return activeSessions;
     }
 }
