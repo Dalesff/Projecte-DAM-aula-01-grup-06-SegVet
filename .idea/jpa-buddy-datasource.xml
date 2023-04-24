@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JpbDataSourceConfig">
+    <data-sources>
+      <data-source id="73e62d3c-f61a-46aa-bd22-1486b593a38f" name="M13_Ales_F_Server" url="jdbc:postgresql://localhost:5432/segvet" driverClass="org.postgresql.Driver" />
+    </data-sources>
+  </component>
+</project>

@@ -1,5 +1,7 @@
 package m13_ales_f_server;
 
+import m13_ales_f_server.controller.Server;
+
 /**
  * 
  * @author David Ales Fernandez
@@ -14,5 +16,4 @@ public class M13_Ales_F_Server {
         Server server = new Server();
         server.start();
     }
-
 }
