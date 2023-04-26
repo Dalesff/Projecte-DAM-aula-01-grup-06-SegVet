@@ -446,7 +446,9 @@ public class Server {
     private void editaEntrada(String line, EntityManager em, EntityManagerFactory emf, PrintWriter writer) {
         String[] reg = line.split(":");
         int id = Integer.parseInt(reg[2]);
-        EntradaHistorial actuEntrada = (EntradaHistorial) em.createQuery("EntradaHistorial.findById").setParameter("id", id).getSingleResult();
+        Query consulta = em.createQuery("SELECT e FROM EntradaHistorial e WHERE e.id = :id");
+        consulta.setParameter("id", id);
+        EntradaHistorial actuEntrada = (EntradaHistorial) consulta.getSingleResult();
         
         actuEntrada.setDescripcio(reg[3]);
         
